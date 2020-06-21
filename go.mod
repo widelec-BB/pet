@@ -1,9 +1,13 @@
 module github.com/knqyf263/pet
 
+go 1.14
+
 require (
 	github.com/BurntSushi/toml v0.3.0
 	github.com/briandowns/spinner v0.0.0-20170614154858-48dbb65d7bd5
+	github.com/chzyer/logex v1.1.10 // indirect
 	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e
+	github.com/chzyer/test v0.0.0-20180213035817-a1ea475d72b1 // indirect
 	github.com/fatih/color v1.7.0
 	github.com/golang/protobuf v1.1.0 // indirect
 	github.com/google/go-github v15.0.0+incompatible
@@ -21,6 +25,7 @@ require (
 	golang.org/x/crypto v0.0.0-20180608092829-8ac0e0d97ce4
 	golang.org/x/net v0.0.0-20180530234432-1e491301e022 // indirect
 	golang.org/x/oauth2 v0.0.0-20180603041954-1e0a3fa8ba9a
+	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a // indirect
 	golang.org/x/sys v0.0.0-20191026070338-33540a1f6037 // indirect
 	google.golang.org/appengine v1.0.0 // indirect
 )
