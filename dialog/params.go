@@ -1,10 +1,15 @@
 package dialog
 
 import (
+	"bytes"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strings"
 
 	"github.com/jroimartin/gocui"
+	"github.com/knqyf263/pet/config"
 )
 
 var (
@@ -28,28 +33,58 @@ func insertParams(command string, params map[string]string) string {
 }
 
 // SearchForParams returns variables from a command
-func SearchForParams(lines []string) map[string]string {
-	re := `<([\S].+?[\S])>`
+func SearchForParams(lines []string) (map[string]string, map[string]string) {
 	if len(lines) == 1 {
-		r, _ := regexp.Compile(re)
-
-		params := r.FindAllStringSubmatch(lines[0], -1)
-		if len(params) == 0 {
-			return nil
-		}
-
-		extracted := map[string]string{}
-		for _, p := range params {
-			splitted := strings.Split(p[1], "=")
-			if len(splitted) == 1 {
-				extracted[p[0]] = ""
-			} else {
-				extracted[p[0]] = splitted[1]
+		normal := searchForParams(`<([\S].+?[\S])>`, lines[0], func(string) string {
+			return ""
+		})
+		paths := searchForParams(`{{([\S].+?[\S])}}`, lines[0], func(name string) string {
+			stdin := bytes.NewBuffer(nil)
+			err := filepath.Walk("./", func(path string, info os.FileInfo, err error) error {
+				stdin.WriteString(path)
+				stdin.WriteRune('\n')
+				return nil
+			})
+			if err != nil {
+				return ""
 			}
-		}
-		return extracted
+			var w bytes.Buffer
+			cmd := exec.Command(config.Conf.General.SelectCmd, "--prompt="+name+" >")
+			cmd.Stderr = os.Stderr
+			cmd.Stdout = &w
+			cmd.Stdin = stdin
+			if err := cmd.Run(); err != nil {
+				return ""
+			}
+			return "\"" + strings.TrimRight(w.String(), "\n\r ") + "\""
+		})
+		return normal, paths
 	}
-	return nil
+	return nil, nil
+}
+
+func searchForParams(regex, line string, def func(string) string) map[string]string {
+	r, _ := regexp.Compile(regex)
+
+	matches := r.FindAllStringSubmatch(line, -1)
+	if len(matches) == 0 {
+		return nil
+	}
+
+	extracted := make(map[string]string)
+	for _, p := range matches {
+		splitted := strings.Split(p[1], "=")
+		if _, exists := extracted[p[0]]; exists == true {
+			continue
+		}
+		if len(splitted) == 1 {
+			extracted[p[0]] = def(p[0])
+		} else {
+			extracted[p[0]] = splitted[1]
+		}
+	}
+
+	return extracted
 }
 
 func evaluateParams(g *gocui.Gui, _ *gocui.View) error {

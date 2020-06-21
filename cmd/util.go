@@ -72,17 +72,22 @@ func filter(options []string) (commands []string, err error) {
 
 	lines := strings.Split(strings.TrimSuffix(buf.String(), "\n"), "\n")
 
-	params := dialog.SearchForParams(lines)
-	if params != nil {
-		snippetInfo := snippetTexts[lines[0]]
-		dialog.CurrentCommand = snippetInfo.Command
-		dialog.GenerateParamsLayout(params, dialog.CurrentCommand)
+	normal, paths := dialog.SearchForParams(lines)
+
+	snippetInfo := snippetTexts[lines[0]]
+	resultCommand := snippetInfo.Command
+
+	if paths != nil {
+		for k, v := range paths {
+			resultCommand = strings.Replace(resultCommand, k, v, -1)
+		}
+	}
+	if normal != nil {
+		dialog.CurrentCommand = resultCommand
+		dialog.GenerateParamsLayout(normal, dialog.CurrentCommand)
 		res := []string{dialog.FinalCommand}
 		return res, nil
 	}
-	for _, line := range lines {
-		snippetInfo := snippetTexts[line]
-		commands = append(commands, fmt.Sprint(snippetInfo.Command))
-	}
+	commands = append(commands, fmt.Sprint(resultCommand))
 	return commands, nil
 }
